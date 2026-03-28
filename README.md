@@ -24,14 +24,6 @@ A shareable URL will be ready within a few minutes.
 
 ---
 
-## 📧 Gmail App Password Setup
-
-1. Google Account → Security → Turn on 2-Step Verification
-2. Security → App Passwords → Select "Mail" + "Windows Computer"
-3. Copy the generated 16-character password into the app sidebar
-
----
-
 ## 📁 JSON Output Format
 
 All keys are in English. Only the `de` / `tr` content fields contain German and Turkish text.
@@ -44,8 +36,8 @@ All keys are in English. Only the `de` / `tr` content fields contain German and 
   "difficulty": "Beginner",
   "languages": ["de", "tr"],
   "created_at": "2025-01-15T14:30:00",
-  "activity_count": 2,
-  "activities": [
+  "question_count": 2,
+  "questions": [
     {
       "id": "mc_d4e5f6a7",
       "type": "multiple_choice",
@@ -129,7 +121,7 @@ All keys are in English. Only the `de` / `tr` content fields contain German and 
 }
 ```
 
-## Activity Types
+## Question Types
 
 | Type key | Description |
 |---|---|
