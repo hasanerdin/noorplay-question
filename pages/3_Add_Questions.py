@@ -5,23 +5,19 @@ Each tab has its own question content + audio file field.
 All selected languages must be filled before saving.
 """
 
-import uuid
 import streamlit as st
 from shared.ui import add_navigation, inject_css, page_header, success_banner, tip
 from shared.constants import ( AGE_GROUPS, DIFFICULTY_LEVELS,
     QUESTION_TYPES, LANGUAGE_LABELS, LANGUAGE_PLACEHOLDERS, LANGUAGES,
 )
 from shared import database as db
+from shared.database import new_id
 
 st.set_page_config(page_title="Add Question", page_icon="➕", layout="wide")
 inject_css()
 
 # ── Sidebar ──────────────────────────────────────────────────────
 add_navigation()
-
-
-def new_id(prefix: str) -> str:
-    return f"{prefix}_{uuid.uuid4().hex[:8]}"
 
 
 def ensure_topic(name: str) -> str:
@@ -87,6 +83,19 @@ with col5:
 if not selected_langs:
     st.warning("Please select at least one language.")
     st.stop()
+
+# ── Optional chapter link ─────────────────────────────────────────
+try:
+    _all_chapters = db.get_all_chapters()
+    chapter_opts  = {"— None —": None}
+    for ch in _all_chapters:
+        book_title = (ch.get("books") or {}).get("title_i18n", {}).get("en", "Book")
+        ch_title   = ch.get("title_i18n", {}).get("en", ch["id"])
+        chapter_opts[f"{book_title} › {ch_title}"] = ch["id"]
+    selected_ch_label = st.selectbox("Link to chapter (optional)", list(chapter_opts.keys()))
+    selected_chapter_id = chapter_opts[selected_ch_label]
+except Exception:
+    selected_chapter_id = None
 
 st.markdown("---")
 
@@ -157,6 +166,7 @@ if que_type == "multiple_choice":
             result = db.insert_question(
                 new_id("mc"), "multiple_choice", tid,
                 age_group, difficulty, selected_langs, content,
+                chapter_id=selected_chapter_id,
             )
             if result:
                 success_banner(f"✅ Saved! ID: <code>{result['id']}</code>")
@@ -327,6 +337,7 @@ elif que_type == "image_matching":
             result = db.insert_question(
                 new_id("im"), "image_matching", tid,
                 age_group, difficulty, selected_langs, content,
+                chapter_id=selected_chapter_id,
             )
             if result:
                 success_banner(f"✅ Saved! ID: <code>{result['id']}</code>")
@@ -420,6 +431,7 @@ elif que_type == "drag_drop_sorting":
             result = db.insert_question(
                 new_id("dd"), "drag_drop_sorting", tid,
                 age_group, difficulty, selected_langs, content,
+                chapter_id=selected_chapter_id,
             )
             if result:
                 success_banner(f"✅ Saved! ID: <code>{result['id']}</code>")
@@ -511,6 +523,7 @@ elif que_type == "story_dialogue":
             result = db.insert_question(
                 new_id("sd"), "story_dialogue", tid,
                 age_group, difficulty, selected_langs, content,
+                chapter_id=selected_chapter_id,
             )
             if result:
                 success_banner(f"✅ Saved! ID: <code>{result['id']}</code>")

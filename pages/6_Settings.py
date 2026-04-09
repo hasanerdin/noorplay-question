@@ -32,8 +32,9 @@ with tab_conn:
     st.markdown("### Secrets Required")
     tip("Add these to <code>.streamlit/secrets.toml</code> locally, or via the Streamlit Cloud Secrets UI.")
     st.code("""
-    SUPABASE_URL = "https://YOUR_PROJECT.supabase.co"
-    SUPABASE_KEY = "YOUR_SERVICE_ROLE_KEY"
+    SUPABASE_URL   = "https://YOUR_PROJECT.supabase.co"
+    SUPABASE_KEY   = "YOUR_SERVICE_ROLE_KEY"
+    OPENAI_API_KEY = "sk-..."
     """, language="toml")
 
 # ── Users tab ────────────────────────────────────────────────────

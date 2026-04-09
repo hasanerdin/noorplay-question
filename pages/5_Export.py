@@ -26,6 +26,8 @@ with c2: f_types  = st.multiselect("Types (empty = all)",      list(QUESTION_TYP
 with c3: f_age    = st.selectbox("Age group",                  ["All"] + AGE_GROUPS,    key="ex_age")
 with c4: f_diff   = st.selectbox("Difficulty",                 ["All"] + DIFFICULTY_LEVELS, key="ex_diff")
 
+f_published_only = st.checkbox("Published only", value=True, key="ex_published")
+
 if st.button("🔄 Build Export", type="primary"):
     try:
         topic_ids = None
@@ -34,10 +36,11 @@ if st.button("🔄 Build Export", type="primary"):
             topic_ids  = [t["id"] for t in all_topics if t["name"] in f_topics]
 
         questions = db.get_questions(
-            topic_ids  = topic_ids or None,
-            type_keys  = f_types or None,
-            age_group  = None if f_age  == "All" else f_age,
-            difficulty = None if f_diff == "All" else f_diff,
+            topic_ids      = topic_ids or None,
+            type_keys      = f_types or None,
+            age_group      = None if f_age  == "All" else f_age,
+            difficulty     = None if f_diff == "All" else f_diff,
+            published_only = f_published_only,
         )
 
         payload  = db.export_questions_as_payload(questions)

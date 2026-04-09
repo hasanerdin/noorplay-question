@@ -143,6 +143,9 @@ NAV_LINKS: list[tuple[str, str]] = [
     ("pages/4_Browse_Questions.py",  "📋 Browse Questions"),
     ("pages/5_Export.py",            "📤 Export JSON"),
     ("pages/6_Settings.py",          "⚙️ Settings"),
+    ("pages/7_Manage_Books.py",      "📚 Manage Books"),
+    ("pages/8_Audio_Library.py",     "🎵 Audio Library"),
+    ("pages/9_Word_Timings.py",      "⏱️ Word Timings"),
 ]
 
 

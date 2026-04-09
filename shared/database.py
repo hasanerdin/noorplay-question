@@ -4,9 +4,17 @@ Pages import these functions; they never call supabase directly.
 """
 
 from __future__ import annotations
+import uuid
 import streamlit as st
 from supabase import create_client, Client
 from datetime import datetime, timezone
+
+
+# ── Utilities ────────────────────────────────────────────────────
+
+def new_id(prefix: str) -> str:
+    """Generate a short random ID with the given prefix, e.g. 'book_3f9a1b2c'."""
+    return f"{prefix}_{uuid.uuid4().hex[:8]}"
 
 
 # ── Connection ───────────────────────────────────────────────────
@@ -54,6 +62,7 @@ def insert_question(
     languages: list[str],
     content: dict,
     audio_file: str | None = None,
+    chapter_id: str | None = None,
 ) -> dict | None:
     db = get_client()
     row = {
@@ -65,6 +74,7 @@ def insert_question(
         "languages":         languages,
         "content":           content,
         "audio_file":        audio_file,
+        "chapter_id":        chapter_id,
         "created_at":        datetime.now(timezone.utc).isoformat(),
     }
     res = db.table("questions").insert(row).execute()
@@ -76,6 +86,7 @@ def get_questions(
     type_keys: list[str] | None = None,
     age_group: str | None = None,
     difficulty: str | None = None,
+    published_only: bool = False,
 ) -> list[dict]:
     db = get_client()
     q  = db.table("questions").select(
@@ -90,6 +101,8 @@ def get_questions(
         q = q.eq("age_group", age_group)
     if difficulty:
         q = q.eq("difficulty", difficulty)
+    if published_only:
+        q = q.eq("is_published", True)
 
     return q.execute().data or []
 
@@ -240,3 +253,114 @@ def delete_image(image_id: str, storage_path: str) -> None:
     db = get_client()
     db.storage.from_(BUCKET).remove([storage_path])
     db.table("images").delete().eq("id", image_id).execute()
+
+
+def set_question_published(question_id: str, published: bool) -> None:
+    get_client().table("questions").update({"is_published": published}).eq("id", question_id).execute()
+
+
+# ── BOOKS ────────────────────────────────────────────────────────
+
+def get_books() -> list[dict]:
+    return get_client().table("books").select("*").order("sort_order").execute().data or []
+
+
+def upsert_book(id: str, slug: str, title_i18n: dict, description_i18n: dict,
+                cover_image_url: str = None, sort_order: int = 0) -> dict:
+    row = dict(id=id, slug=slug, title_i18n=title_i18n,
+               description_i18n=description_i18n,
+               cover_image_url=cover_image_url, sort_order=sort_order)
+    return get_client().table("books").upsert(row).execute().data[0]
+
+
+def set_book_published(book_id: str, published: bool) -> None:
+    get_client().table("books").update({"is_published": published}).eq("id", book_id).execute()
+
+
+# ── CHAPTERS ─────────────────────────────────────────────────────
+
+def get_chapters(book_id: str) -> list[dict]:
+    return get_client().table("chapters").select("*").eq("book_id", book_id).order("sort_order").execute().data or []
+
+
+def get_all_chapters() -> list[dict]:
+    """Return all chapters across all books (used for chapter_id linking on questions)."""
+    return get_client().table("chapters").select("*, books(title_i18n)").order("sort_order").execute().data or []
+
+
+def upsert_chapter(id: str, book_id: str, title_i18n: dict, sort_order: int = 0) -> dict:
+    row = dict(id=id, book_id=book_id, title_i18n=title_i18n, sort_order=sort_order)
+    return get_client().table("chapters").upsert(row).execute().data[0]
+
+
+def set_chapter_published(chapter_id: str, published: bool) -> None:
+    get_client().table("chapters").update({"is_published": published}).eq("id", chapter_id).execute()
+
+
+def delete_chapter(chapter_id: str) -> None:
+    get_client().table("chapters").delete().eq("id", chapter_id).execute()
+
+
+# ── PAGES ────────────────────────────────────────────────────────
+
+def get_pages(chapter_id: str) -> list[dict]:
+    return get_client().table("pages").select("*").eq("chapter_id", chapter_id).order("page_number").execute().data or []
+
+
+def upsert_page(id: str, chapter_id: str, page_number: int,
+                sentences: list[dict], illustration_url: str = None) -> dict:
+    row = dict(id=id, chapter_id=chapter_id, page_number=page_number,
+               sentences=sentences, illustration_url=illustration_url)
+    return get_client().table("pages").upsert(row).execute().data[0]
+
+
+def delete_page(page_id: str) -> None:
+    get_client().table("pages").delete().eq("id", page_id).execute()
+
+
+# ── WORD TIMINGS ─────────────────────────────────────────────────
+
+def get_word_timings(page_id: str) -> list[dict]:
+    return get_client().table("word_timings").select("*").eq("page_id", page_id).execute().data or []
+
+
+def upsert_word_timings(page_id: str, language: str, timings: list[dict],
+                        audio_url: str = None, tts_audio_url: str = None) -> dict:
+    existing = get_client().table("word_timings")\
+        .select("id").eq("page_id", page_id).eq("language", language).execute().data
+    row_id = existing[0]["id"] if existing else new_id("wt")
+    row = dict(id=row_id, page_id=page_id, language=language,
+               timings=timings, audio_url=audio_url, tts_audio_url=tts_audio_url)
+    return get_client().table("word_timings").upsert(row).execute().data[0]
+
+
+# ── AUDIO FILES ──────────────────────────────────────────────────
+
+def upload_audio(file_bytes: bytes, original_filename: str, language: str) -> dict:
+    import time
+    stem = original_filename.rsplit(".", 1)[0]
+    ext  = original_filename.rsplit(".", 1)[-1].lower()
+    storage_path = f"audio/{language}/{stem}_{int(time.time())}.{ext}"
+    client = get_client()
+    client.storage.from_("audio").upload(
+        storage_path, file_bytes,
+        file_options={"content-type": f"audio/{ext}", "upsert": "true"},
+    )
+    public_url = client.storage.from_("audio").get_public_url(storage_path)
+    row_id = new_id("aud")
+    row = dict(id=row_id, storage_path=storage_path, public_url=public_url,
+               language=language, filename=original_filename,
+               size_bytes=len(file_bytes))
+    return client.table("audio_files").insert(row).execute().data[0]
+
+
+def get_audio_files(language: str = None) -> list[dict]:
+    q = get_client().table("audio_files").select("*").order("created_at", desc=True)
+    if language:
+        q = q.eq("language", language)
+    return q.execute().data or []
+
+
+def delete_audio(audio_id: str, storage_path: str) -> None:
+    get_client().storage.from_("audio").remove([storage_path])
+    get_client().table("audio_files").delete().eq("id", audio_id).execute()

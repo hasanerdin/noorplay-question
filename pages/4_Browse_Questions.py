@@ -58,6 +58,15 @@ try:
                 with col1:
                     st.markdown(f"**ID:** `{q['id']}`")
                     st.markdown(f"**Created:** {q['created_at'][:19].replace('T', ' ')}")
+                    published = q.get("is_published", False)
+                    new_pub = st.toggle(
+                        "Published",
+                        value=published,
+                        key=f"pub_{q['id']}",
+                    )
+                    if new_pub != published:
+                        db.set_question_published(q["id"], new_pub)
+                        st.rerun()
                     st.json(q["content"])
                 with col2:
                     if st.button("🗑️ Delete", key=f"del_{q['id']}"):
