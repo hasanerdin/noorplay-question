@@ -137,15 +137,15 @@ hr { border: none; border-top: 1px solid #d4c9b0; margin: 20px 0; }
 
 NAV_LINKS: list[tuple[str, str]] = [
     ("app.py",                       "🏠 Dashboard"),
-    ("pages/1_Manage_Topics.py",     "🏷️ Manage Topics"),
+    ("pages/1_Manage_Books.py",      "📚 Manage Books"),
     ("pages/2_Image_Library.py",     "🖼️ Image Library"),
-    ("pages/3_Add_Questions.py",     "➕ Add Questions"),
-    ("pages/4_Browse_Questions.py",  "📋 Browse Questions"),
-    ("pages/5_Export.py",            "📤 Export JSON"),
-    ("pages/6_Settings.py",          "⚙️ Settings"),
-    ("pages/7_Manage_Books.py",      "📚 Manage Books"),
-    ("pages/8_Audio_Library.py",     "🎵 Audio Library"),
-    ("pages/9_Word_Timings.py",      "⏱️ Word Timings"),
+    ("pages/3_Audio_Library.py",     "🎵 Audio Library"),
+    ("pages/4_Word_Timings.py",      "⏱️ Word Timings"),
+    ("pages/5_Manage_Topics.py",     "🏷️ Manage Topics"),
+    ("pages/6_Add_Questions.py",     "➕ Add Questions"),
+    ("pages/7_Browse_Questions.py",  "📋 Browse Questions"),
+    ("pages/8_Export.py",            "📤 Export JSON"),
+    ("pages/9_Settings.py",          "⚙️ Settings"),
 ]
 
 
